@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+/* ---------- Types ---------- */
 type Bottle = {
   id: string;
   name: string;
@@ -10,7 +11,23 @@ type Bottle = {
   meaning?: string;
 };
 
-/* ---------- Data: 12 bottles (이미지는 /public 폴더에 "1. bottle.png" ~ "12. bottle.png") ---------- */
+/* ---------- Brand / Color Map (타이틀/배경 등에 사용) ---------- */
+const colorMap: Record<string, string> = {
+  Red: "#D32F2F",
+  Orange: "#F57C00",
+  Yellow: "#FBC02D",
+  Green: "#388E3C",
+  Blue: "#1976D2",
+  Indigo: "#3F51B5",
+  Violet: "#8E24AA",
+  Turquoise: "#0097A7",
+  Pink: "#E91E63",
+  Gold: "#FFD700",
+  "White/Clear": "#BDBDBD",
+  Magenta: "#C2185B",
+};
+
+/* ---------- Data: 12 bottles (이미지는 /public에 "1. bottle.png" ~ "12. bottle.png") ---------- */
 const DEFAULT_BOTTLES: Bottle[] = [
   {
     id: "1",
@@ -109,19 +126,24 @@ const BottleCard = ({
   <motion.button
     layoutId={`card-${bottle.id}`}
     onClick={() => onSelect(bottle.id)}
-    className="group relative w-full overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:shadow-md focus:outline-none focus:ring-4 focus:ring-indigo-200"
+    whileHover={{ y: -4, scale: 1.02 }}
+    transition={{ type: "spring", stiffness: 250, damping: 20 }}
+    className="group relative w-full overflow-hidden rounded-2xl border border-zinc-200/70 bg-white/80 p-5 shadow-sm backdrop-blur transition hover:shadow-md focus:outline-none focus:ring-4 focus:ring-purple-200/40"
   >
-    <div className="flex h-52 items-center justify-center">
+    <div className="flex h-56 items-center justify-center">
       <motion.img
         layoutId={`bottle-${bottle.id}`}
         src={bottle.image}
         alt={bottle.name}
-        className="max-h-full max-w-full object-contain text-gray-600"
+        className="max-h-full max-w-full object-contain drop-shadow-sm"
         draggable={false}
       />
     </div>
-    <div className="mt-3 flex items-center justify-between">
-      <motion.h3 layoutId={`name-${bottle.id}`} className="text-base font-semibold text-zinc-800">
+    <div className="mt-3 flex items-center justify-center">
+      <motion.h3
+        layoutId={`name-${bottle.id}`}
+        className="text-base font-semibold text-gray-600"
+      >
         {bottle.name}
       </motion.h3>
     </div>
@@ -136,64 +158,89 @@ const BottleDetail = ({
   bottle: Bottle;
   onBack: () => void;
 }) => {
-  const [open, setOpen] = useState(false); // ← setOpen 정의
+  const [open, setOpen] = useState(false);
+
+  const accent = colorMap[bottle.name] ?? "#7E57C2";
+  const softBg = `${accent}20`; // 8자리 HEX(투명도 약 12%)
 
   return (
-    <motion.div layoutId={`card-${bottle.id}`} className="relative">
-      <div className="mb-4 flex items-center gap-3">
+    <motion.div
+      layoutId={`card-${bottle.id}`}
+      className="relative rounded-3xl p-4 md:p-6"
+      style={{ background: `linear-gradient(135deg, ${softBg}, #ffffff)` }}
+    >
+      <div className="mb-5 flex items-center justify-between gap-3">
         <button
           onClick={onBack}
-          className="rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-700 shadow-sm hover:bg-zinc-50"
+          className="rounded-full border border-zinc-200 bg-white/90 px-3 py-1.5 text-sm text-zinc-800 shadow-sm backdrop-blur hover:bg-white"
         >
           ← 뒤로
         </button>
-        <motion.h2 layoutId={`name-${bottle.id}`} className="text-xl font-bold text-gray-600">
+
+        <motion.h2
+          layoutId={`name-${bottle.id}`}
+          className="text-2xl font-extrabold tracking-tight md:text-3xl"
+          style={{ color: accent }}
+        >
           {bottle.name}
         </motion.h2>
+
+        <div />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <motion.div layoutId={`bottle-${bottle.id}`} className="flex items-center justify-center">
+      <div className="grid grid-cols-1 items-start gap-8 md:grid-cols-2">
+        {/* 병 이미지 */}
+        <motion.div
+          layoutId={`bottle-${bottle.id}`}
+          className="flex items-center justify-center"
+        >
           <img
             src={bottle.image}
             alt={bottle.name}
-            className="w-44 h-72 md:w-60 md:h-96 object-contain rounded-2xl border border-zinc-200 bg-white shadow-sm p-6"
+            className="w-48 h-auto md:w-64 object-contain rounded-2xl border border-zinc-200 bg-white/95 shadow-md p-6"
             draggable={false}
           />
         </motion.div>
 
-        {/* 우측 영역: 토글 버튼 + 의미 */}
+        {/* 의미 카드 */}
         <div className="space-y-4">
           <button
             onClick={() => setOpen((v) => !v)}
-            className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-800 shadow-sm hover:bg-zinc-50"
+            className="rounded-xl border border-zinc-200 bg-white/90 px-4 py-2 text-sm font-medium text-zinc-900 shadow-sm backdrop-blur hover:bg-white"
             aria-expanded={open}
           >
             {open ? "컬러의 의미 닫기" : "컬러의 의미 살펴보기"}
           </button>
 
-          {open && (
-            <motion.div
-              key="meaning"
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm"
-            >
-              <h3 className="mb-2 text-base font-semibold text-gray-600">{bottle.name}의 의미</h3>
+          <AnimatePresence initial={false} mode="wait">
+            {open && (
+              <motion.div
+                key="meaning"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.25 }}
+                className="rounded-3xl border border-zinc-200 bg-white/95 p-6 shadow-md backdrop-blur"
+              >
+                <h3
+                  className="mb-3 text-lg font-semibold"
+                  style={{ color: accent }}
+                >
+                  {bottle.name}의 의미
+                </h3>
 
-              {/* 콤마(,)로 구분된 문자열을 보기 좋게 리스트로 표시 */}
-              <ul className="list-disc pl-5 space-y-1 text-sm leading-relaxed text-zinc-700">
-                {(bottle.meaning ?? "")
-                  .split(",")
-                  .map((t) => t.trim())
-                  .filter(Boolean)
-                  .map((t, i) => (
-                    <li key={i}>{t}</li>
-                  ))}
-              </ul>
-            </motion.div>
-          )}
+                <ul className="list-disc pl-5 space-y-1.5 text-[15px] leading-relaxed text-zinc-900">
+                  {(bottle.meaning ?? "")
+                    .split(",")
+                    .map((t) => t.trim())
+                    .filter(Boolean)
+                    .map((t, i) => (
+                      <li key={i}>{t}</li>
+                    ))}
+                </ul>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </motion.div>
@@ -201,23 +248,33 @@ const BottleDetail = ({
 };
 
 /* ---------- Main Component ---------- */
-export default function ColorBottleTarotApp({ bottles = DEFAULT_BOTTLES }: { bottles?: Bottle[] }) {
+export default function ColorBottleTarotApp({
+  bottles = DEFAULT_BOTTLES,
+}: {
+  bottles?: Bottle[];
+}) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const items = useMemo(() => bottles, [bottles]);
   const selected = items.find((b) => b.id === selectedId) || null;
 
   return (
-    <div className="mx-auto max-w-6xl p-6 md:p-10">
-      <header className="mb-8 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+    <div className="mx-auto max-w-6xl px-6 py-8 md:px-10 md:py-12">
+      {/* 상단 헤더 */}
+      <header className="mb-10 flex flex-col items-start justify-between gap-6 md:mb-12 md:flex-row md:items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl text-gray-600">컬러 바틀 선택</h1>
-          <p className="mt-1 text-zinc-600">12개의 바틀 중 마음이 가는 하나를 선택해 보세요.</p>
+          <h1 className="bg-gradient-to-r from-[#C8B6E2] via-[#F5C6EC] to-[#B8E0D2] bg-clip-text text-3xl font-extrabold leading-tight text-transparent md:text-4xl">
+            컬러 바틀 선택
+          </h1>
+          <p className="mt-1 text-[15px] leading-relaxed text-zinc-900">
+            12개의 바틀 중 마음이 가는 하나를 선택해 보세요.
+          </p>
         </div>
+
         {!selected && (
           <div className="flex items-center gap-2">
             <button
               onClick={() => setSelectedId(null)}
-              className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-700 shadow-sm hover:bg-zinc-50"
+              className="rounded-xl border border-zinc-200 bg-white/90 px-4 py-2 text-sm text-zinc-900 shadow-sm backdrop-blur hover:bg-white"
             >
               초기화
             </button>
@@ -225,14 +282,15 @@ export default function ColorBottleTarotApp({ bottles = DEFAULT_BOTTLES }: { bot
         )}
       </header>
 
+      {/* 리스트 / 상세 전환 */}
       <AnimatePresence mode="wait">
         {!selected ? (
           <motion.div
             key="grid"
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
+            exit={{ opacity: 0, y: -8 }}
+            className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4"
           >
             {items.map((bottle) => (
               <BottleCard key={bottle.id} bottle={bottle} onSelect={setSelectedId} />
@@ -241,17 +299,18 @@ export default function ColorBottleTarotApp({ bottles = DEFAULT_BOTTLES }: { bot
         ) : (
           <motion.div
             key="detail"
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+            exit={{ opacity: 0, y: -8 }}
           >
             <BottleDetail bottle={selected} onBack={() => setSelectedId(null)} />
           </motion.div>
         )}
       </AnimatePresence>
 
-      <footer className="mt-10 text-center text-xs text-zinc-500">
-        © {new Date().getFullYear()} UDUL STUDIO
+      {/* 푸터 */}
+      <footer className="mt-14 text-center text-xs text-zinc-700">
+        © {new Date().getFullYear()} UDUL STUDIO - 컬러인포스
       </footer>
     </div>
   );
