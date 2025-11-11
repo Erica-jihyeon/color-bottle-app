@@ -10,28 +10,18 @@ export default function Dashboard() {
   const { data: session } = useSession();
   const user = session?.user;
 
+  // ✅ 모든 Hook은 최상단에서 호출 (조건문 위)
   const [creating, setCreating] = useState(false);
   const [sessionLink, setSessionLink] = useState<string | null>(null);
 
-  // ✅ 로그인 안 된 경우 로딩 처리
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-zinc-700">
-        <p>로그인 정보를 불러오는 중입니다...</p>
-      </div>
-    );
-  }
-
-  // ✅ 세션 정보에서 사용자 데이터 추출
-  const subscriptionStatus = user.subscriptionStatus || "none";
-  const isAdmin = user.isAdmin || false;
-  const expiresAt = user.expiresAt || null;
+  const subscriptionStatus = user?.subscriptionStatus || "none";
+  const isAdmin = user?.isAdmin || false;
+  const expiresAt = user?.expiresAt || null;
 
   const isExpired = subscriptionStatus === "expired";
   const now = dayjs();
   const expiryDate = expiresAt ? dayjs(expiresAt) : null;
 
-  // ✅ 남은 일수 계산
   const daysRemaining = useMemo(() => {
     if (!expiryDate) return null;
     const diff = expiryDate.diff(now, "day");
@@ -64,7 +54,7 @@ export default function Dashboard() {
     }
   };
 
-  // ✅ 링크 복사 (원래 있던 기능 유지)
+  // ✅ 링크 복사 (기존 기능 유지)
   const copyToClipboard = () => {
     if (sessionLink) {
       const fullUrl = `${window.location.origin}${sessionLink}`;
@@ -78,6 +68,16 @@ export default function Dashboard() {
     await signOut({ callbackUrl: "/enter" });
   };
 
+  // ✅ 로그인 안 된 경우 로딩 화면 (Hook 이후에 위치)
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-zinc-700">
+        <p>로그인 정보를 불러오는 중입니다...</p>
+      </div>
+    );
+  }
+
+  // ✅ 본문 렌더링
   return (
     <div className="min-h-screen flex flex-col items-center justify-between bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 px-6 py-10">
       <main className="w-full max-w-2xl bg-white/90 backdrop-blur-lg rounded-2xl shadow-md border border-zinc-200 p-8 space-y-6">
@@ -152,7 +152,7 @@ export default function Dashboard() {
               {creating ? "🔄 생성 중..." : "🌿 하루 세션 링크 생성하기"}
             </button>
 
-            {/* 세션 링크 표시 + 복사 기능 (원래 그대로 유지됨) */}
+            {/* 세션 링크 표시 + 복사 기능 */}
             {sessionLink && (
               <div className="mt-4 bg-zinc-100 border border-zinc-200 rounded-xl p-3 text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <span className="truncate text-zinc-700">
@@ -192,7 +192,7 @@ export default function Dashboard() {
         {/* 로그아웃 */}
         <div className="text-center mt-6">
           <button
-            onClick={async () => await signOut({ callbackUrl: "/enter" })}
+            onClick={handleSignOut}
             className="text-sm text-zinc-600 hover:text-zinc-800 underline"
           >
             로그아웃
