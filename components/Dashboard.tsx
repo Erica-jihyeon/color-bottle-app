@@ -6,9 +6,19 @@ import dayjs from "dayjs";
 import { Copy } from "lucide-react";
 import Footer from "@/components/Footer";
 
+// ✅ 타입 보완용: next-auth.d.ts 확장 인식이 불완전할 때 fallback
+interface ExtendedUser {
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  subscriptionStatus?: "active" | "expired" | "none" | string;
+  expiresAt?: string | Date | null;
+  isAdmin?: boolean;
+}
+
 export default function Dashboard() {
   const { data: session } = useSession();
-  const user = session?.user;
+  const user = session?.user as ExtendedUser | undefined; // 👈 타입 단언 추가
 
   // ✅ 모든 Hook은 최상단에서 호출 (조건문 위)
   const [creating, setCreating] = useState(false);
@@ -68,7 +78,7 @@ export default function Dashboard() {
     await signOut({ callbackUrl: "/enter" });
   };
 
-  // ✅ 로그인 안 된 경우 로딩 화면 (Hook 이후에 위치)
+  // ✅ 로그인 안 된 경우 로딩 화면
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center text-zinc-700">
