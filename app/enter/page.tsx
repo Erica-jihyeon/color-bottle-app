@@ -15,7 +15,7 @@ export default async function EnterPage() {
   const session = await getServerSession(authOptions);
   const email = session?.user?.email ?? null;
 
-  // 1️⃣ 로그인 안 된 경우 → 로그인 섹션 표시
+  // 🔹 로그인 안 된 경우
   if (!session) return <LoginSection />;
 
   let isAdmin = false;
@@ -25,24 +25,28 @@ export default async function EnterPage() {
 
   if (email) {
     try {
-      /* ✅ 관리자 확인 */
-      const adminDoc = await adminDb.collection("admins").doc(email).get();
-      if (adminDoc.exists && adminDoc.data()?.active) {
+      /* ✅ 관리자 여부 확인 */
+      const adminRef = adminDb.collection("admins").doc(email);
+      const adminSnap = await adminRef.get();
+
+      if (adminSnap.exists && adminSnap.data()?.active === true) {
         isAdmin = true;
       }
 
       /* ✅ 구독 상태 확인 */
-      const subsSnap = await adminDb
+      const subsQuery = await adminDb
         .collection("subscriptions")
         .where("email", "==", email)
         .limit(1)
         .get();
 
-      if (!subsSnap.empty) {
-        const subsData = subsSnap.docs[0].data();
-        subscriptionStatus = subsData.status || null;
-        subscriptionName = subsData.name || null;
-        expiresAt = subsData.expiresAt?.toDate?.() || null;
+      if (!subsQuery.empty) {
+        const subsData = subsQuery.docs[0].data();
+        subscriptionStatus = subsData.status ?? null;
+        subscriptionName = subsData.name ?? null;
+        expiresAt = subsData.expiresAt?.toDate?.() ?? null;
+      } else {
+        console.warn(`⚠️ No subscription found for ${email}`);
       }
     } catch (error) {
       console.error("❌ Firestore 접근 오류:", error);
@@ -50,9 +54,9 @@ export default async function EnterPage() {
   }
 
   /* -------------------------------------------------------
-   ✅ 권한 없음 처리
+   🚫 권한 없음 처리
   ------------------------------------------------------- */
-  if (!isAdmin && !subscriptionStatus) {
+  if (!isAdmin && subscriptionStatus !== "active") {
     return (
       <div
         style={{
@@ -75,8 +79,10 @@ export default async function EnterPage() {
           현재 로그인된 이메일: <strong>{email}</strong>
         </p>
 
-        {/* ✅ 로그아웃 버튼 (클라이언트 컴포넌트) */}
-        <LogoutButton />
+        {/* ✅ 로그아웃 버튼 */}
+        <div style={{ marginTop: "1rem" }}>
+          <LogoutButton />
+        </div>
 
         <Footer />
       </div>
@@ -84,9 +90,8 @@ export default async function EnterPage() {
   }
 
   /* -------------------------------------------------------
-   ✅ 권한 OK → Dashboard 렌더링
-   - props 전달 ❌
-   - Dashboard 내부에서 useSession()으로 로그인 정보 자동 로드
+   ✅ 접근 허용 → Dashboard 렌더링
+   - Dashboard 내부에서 useSession()으로 상태 관리
   ------------------------------------------------------- */
   return (
     <>
