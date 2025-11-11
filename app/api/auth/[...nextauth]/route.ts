@@ -24,7 +24,7 @@ export const authOptions = {
      ✅ 로그인은 모든 구글 사용자 허용
      - 차단하지 않고, Firestore에서 상태 확인
     ------------------------------------------------------- */
-    async signIn({ user }) {
+    async signIn({ user }: { user: any }) {
       console.log("✅ 로그인 시도:", user.email);
       return true; // 누구나 로그인 가능
     },
