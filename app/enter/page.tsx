@@ -4,24 +4,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../api/auth/[...nextauth]/route";
 import Dashboard from "@/components/Dashboard";
 import LoginSection from "@/components/LoginSection";
-import admin from "firebase-admin";
+import { adminDb } from "@/lib/firebaseAdmin";
 import Footer from "@/components/Footer";
 import LogoutButton from "@/components/LogoutButton";
-
-/* -------------------------------------------------------
- ✅ Firebase Admin SDK 초기화 (서버 환경 전용)
-------------------------------------------------------- */
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    }),
-  });
-}
-
-const db = admin.firestore();
 
 /* -------------------------------------------------------
  ✅ EnterPage: 로그인 + Firestore 기반 접근 제어
@@ -41,13 +26,13 @@ export default async function EnterPage() {
   if (email) {
     try {
       /* ✅ 관리자 확인 */
-      const adminDoc = await db.collection("admins").doc(email).get();
+      const adminDoc = await adminDb.collection("admins").doc(email).get();
       if (adminDoc.exists && adminDoc.data()?.active) {
         isAdmin = true;
       }
 
       /* ✅ 구독 상태 확인 */
-      const subsSnap = await db
+      const subsSnap = await adminDb
         .collection("subscriptions")
         .where("email", "==", email)
         .limit(1)
@@ -80,7 +65,9 @@ export default async function EnterPage() {
           boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
         }}
       >
-        <h1 style={{ fontSize: "1.6rem", marginBottom: "0.8rem" }}>접근 권한이 없습니다</h1>
+        <h1 style={{ fontSize: "1.6rem", marginBottom: "0.8rem" }}>
+          접근 권한이 없습니다
+        </h1>
         <p style={{ color: "#666", lineHeight: 1.5 }}>
           이 워크샵은 등록된 컬러인포스 강사 또는 관리자만 접근 가능합니다.
         </p>
