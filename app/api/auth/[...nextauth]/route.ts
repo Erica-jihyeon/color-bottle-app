@@ -2,12 +2,10 @@ export const runtime = "nodejs";
 
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { adminDb as db } from "@/lib/firebaseAdmin";
 
 /**
- * ✅ NextAuthOptions 타입은 생략 (빌드 깨짐 방지)
- *    → 대신 런타임 객체로 authOptions 사용
+ * ✅ NextAuthOptions 타입은 생략 (빌드 에러 방지)
  */
 export const authOptions = {
   providers: [
@@ -25,7 +23,7 @@ export const authOptions = {
      ------------------------------------------------------- */
     async signIn({ user }: { user: any }) {
       console.log("✅ 로그인 시도:", user.email);
-      return true; // 누구나 로그인 가능
+      return true;
     },
 
     /* -------------------------------------------------------
@@ -34,23 +32,34 @@ export const authOptions = {
     async jwt({ token, user }: { token: any; user: any }) {
       if (user?.email) {
         try {
-          const subRef = doc(db, "subscriptions", user.email);
-          const subSnap = await getDoc(subRef);
+          console.log("✅ JWT 콜백 시작:", user.email);
 
-          if (subSnap.exists()) {
-            const data = subSnap.data();
+          // ✅ Firestore Admin SDK로 subscriptions 문서 조회
+          const subSnap = await db
+            .collection("subscriptions")
+            .where("email", "==", user.email)
+            .limit(1)
+            .get();
+
+          if (!subSnap.empty) {
+            const data = subSnap.docs[0].data();
+            console.log("🔥 구독 문서:", data);
             token.subscriptionStatus = data.status || "unknown";
             token.expiresAt = data.expiresAt?.toDate?.() || null;
           } else {
+            console.log("⚠️ 구독 문서 없음:", user.email);
             token.subscriptionStatus = "none";
             token.expiresAt = null;
           }
 
           // ✅ 관리자 여부 확인
-          const adminRef = doc(db, "admins", user.email);
-          const adminSnap = await getDoc(adminRef);
+          const adminSnap = await db
+            .collection("admins")
+            .doc(user.email)
+            .get();
+
           token.isAdmin =
-            adminSnap.exists() && adminSnap.data()?.active === true;
+            adminSnap.exists && adminSnap.data()?.active === true;
         } catch (err) {
           console.error("⚠️ Firestore 조회 오류:", err);
         }
@@ -96,5 +105,6 @@ export const authOptions = {
   },
 };
 
+// ✅ NextAuth를 핸들러로 래핑
 const handler = (NextAuth as any)(authOptions);
 export { handler as GET, handler as POST };
