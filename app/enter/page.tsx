@@ -30,7 +30,7 @@ export default async function EnterPage() {
   const session = await getServerSession(authOptions);
   const email = session?.user?.email ?? null;
 
-  // 1️⃣ 로그인 안 된 경우
+  // 1️⃣ 로그인 안 된 경우 → 로그인 섹션 표시
   if (!session) return <LoginSection />;
 
   let isAdmin = false;
@@ -87,10 +87,10 @@ export default async function EnterPage() {
         <p style={{ marginTop: "1rem", color: "#999" }}>
           현재 로그인된 이메일: <strong>{email}</strong>
         </p>
-  
-        {/* ✅ 로그아웃 버튼 분리 (클라이언트 컴포넌트) */}
+
+        {/* ✅ 로그아웃 버튼 (클라이언트 컴포넌트) */}
         <LogoutButton />
-  
+
         <Footer />
       </div>
     );
@@ -98,16 +98,12 @@ export default async function EnterPage() {
 
   /* -------------------------------------------------------
    ✅ 권한 OK → Dashboard 렌더링
+   - props 전달 ❌
+   - Dashboard 내부에서 useSession()으로 로그인 정보 자동 로드
   ------------------------------------------------------- */
   return (
     <>
-      <Dashboard
-        user={session.user}
-        isAdmin={isAdmin}
-        subscriptionStatus={subscriptionStatus}
-        subscriptionName={subscriptionName}
-        expiresAt={expiresAt}
-      />
+      <Dashboard />
       <Footer />
     </>
   );

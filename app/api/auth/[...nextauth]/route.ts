@@ -59,7 +59,7 @@ export const authOptions: NextAuthOptions = {
      ✅ 세션에 이메일, 구독상태, 관리자여부 포함
     ------------------------------------------------------- */
     async session({ session, token }) {
-      if (token?.email) {
+      if (session?.user && token?.email) {
         session.user.email = token.email;
         session.user.subscriptionStatus = token.subscriptionStatus || "none";
         session.user.expiresAt = token.expiresAt || null;

@@ -1,21 +1,31 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useSession, signOut } from "next-auth/react";
 import dayjs from "dayjs";
 import { Copy } from "lucide-react";
-import { signOut } from "next-auth/react";
 import Footer from "@/components/Footer";
 
+export default function Dashboard() {
+  const { data: session } = useSession();
+  const user = session?.user;
 
-export default function Dashboard({
-  user,
-  isAdmin,
-  subscriptionStatus,
-  subscriptionName,
-  expiresAt,
-}) {
   const [creating, setCreating] = useState(false);
   const [sessionLink, setSessionLink] = useState<string | null>(null);
+
+  // ✅ 로그인 안 된 경우 로딩 처리
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-zinc-700">
+        <p>로그인 정보를 불러오는 중입니다...</p>
+      </div>
+    );
+  }
+
+  // ✅ 세션 정보에서 사용자 데이터 추출
+  const subscriptionStatus = user.subscriptionStatus || "none";
+  const isAdmin = user.isAdmin || false;
+  const expiresAt = user.expiresAt || null;
 
   const isExpired = subscriptionStatus === "expired";
   const now = dayjs();
@@ -54,7 +64,7 @@ export default function Dashboard({
     }
   };
 
-  // ✅ 링크 복사
+  // ✅ 링크 복사 (원래 있던 기능 유지)
   const copyToClipboard = () => {
     if (sessionLink) {
       const fullUrl = `${window.location.origin}${sessionLink}`;
@@ -142,7 +152,7 @@ export default function Dashboard({
               {creating ? "🔄 생성 중..." : "🌿 하루 세션 링크 생성하기"}
             </button>
 
-            {/* 세션 링크 표시 */}
+            {/* 세션 링크 표시 + 복사 기능 (원래 그대로 유지됨) */}
             {sessionLink && (
               <div className="mt-4 bg-zinc-100 border border-zinc-200 rounded-xl p-3 text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <span className="truncate text-zinc-700">
@@ -182,7 +192,7 @@ export default function Dashboard({
         {/* 로그아웃 */}
         <div className="text-center mt-6">
           <button
-            onClick={handleSignOut}
+            onClick={async () => await signOut({ callbackUrl: "/enter" })}
             className="text-sm text-zinc-600 hover:text-zinc-800 underline"
           >
             로그아웃
