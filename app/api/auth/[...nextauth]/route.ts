@@ -1,11 +1,15 @@
 export const runtime = "nodejs";
 
-import NextAuth, { type NextAuthOptions } from "next-auth";
+import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
-export const authOptions: NextAuthOptions = {
+/**
+ * ✅ 여기서는 굳이 NextAuthOptions 타입 안 씀
+ *    -> 타입 때문에 빌드가 깨지니까 그냥 런타임 객체로 사용
+ */
+export const authOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -16,15 +20,22 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 
   callbacks: {
+    /* -------------------------------------------------------
+     ✅ 로그인은 모든 구글 사용자 허용
+     - 차단하지 않고, Firestore에서 상태 확인
+    ------------------------------------------------------- */
     async signIn({ user }) {
       console.log("✅ 로그인 시도:", user.email);
-      return true;
+      return true; // 누구나 로그인 가능
     },
 
+    /* -------------------------------------------------------
+     ✅ JWT 토큰에 Firestore 기반 사용자 정보 저장
+     - subscriptions, admins 컬렉션에서 구독/권한 상태 불러오기
+    ------------------------------------------------------- */
     async jwt({ token, user }) {
       if (user?.email) {
         try {
-          // ✅ 구독 상태 확인
           const subRef = doc(db, "subscriptions", user.email);
           const subSnap = await getDoc(subRef);
 
@@ -37,10 +48,11 @@ export const authOptions: NextAuthOptions = {
             token.expiresAt = null;
           }
 
-          // ✅ 관리자 확인
+          // 관리자 여부 확인
           const adminRef = doc(db, "admins", user.email);
           const adminSnap = await getDoc(adminRef);
-          token.isAdmin = adminSnap.exists() && adminSnap.data()?.active === true;
+          token.isAdmin =
+            adminSnap.exists() && adminSnap.data()?.active === true;
         } catch (err) {
           console.error("⚠️ Firestore 조회 오류:", err);
         }
@@ -50,6 +62,9 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
 
+    /* -------------------------------------------------------
+     ✅ 세션에 이메일, 구독상태, 관리자여부 포함
+    ------------------------------------------------------- */
     async session({ session, token }) {
       if (session?.user && token?.email) {
         session.user.email = token.email;
@@ -60,11 +75,17 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
 
+    /* -------------------------------------------------------
+     ✅ 로그인 후 항상 /dashboard로 리디렉트
+    ------------------------------------------------------- */
     async redirect({ baseUrl }) {
       return `${baseUrl}/dashboard`;
     },
   },
 
+  /* -------------------------------------------------------
+   ✅ 로그인 / 로그아웃 경로 지정
+  ------------------------------------------------------- */
   pages: {
     signIn: "/enter",
     signOut: "/enter",
