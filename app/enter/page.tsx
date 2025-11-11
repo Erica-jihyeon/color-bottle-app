@@ -1,6 +1,6 @@
 export const runtime = "nodejs";
 
-import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth/next";
 import { authOptions } from "../api/auth/[...nextauth]/route";
 import Dashboard from "@/components/Dashboard";
 import LoginSection from "@/components/LoginSection";
