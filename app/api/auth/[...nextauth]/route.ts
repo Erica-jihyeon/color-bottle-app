@@ -6,8 +6,8 @@ import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
 /**
- * ✅ 여기서는 굳이 NextAuthOptions 타입 안 씀
- *    -> 타입 때문에 빌드가 깨지니까 그냥 런타임 객체로 사용
+ * ✅ NextAuthOptions 타입은 생략 (빌드 깨짐 방지)
+ *    → 대신 런타임 객체로 authOptions 사용
  */
 export const authOptions = {
   providers: [
@@ -21,9 +21,8 @@ export const authOptions = {
 
   callbacks: {
     /* -------------------------------------------------------
-     ✅ 로그인은 모든 구글 사용자 허용
-     - 차단하지 않고, Firestore에서 상태 확인
-    ------------------------------------------------------- */
+     ✅ 로그인: 모든 구글 사용자 허용
+     ------------------------------------------------------- */
     async signIn({ user }: { user: any }) {
       console.log("✅ 로그인 시도:", user.email);
       return true; // 누구나 로그인 가능
@@ -31,9 +30,8 @@ export const authOptions = {
 
     /* -------------------------------------------------------
      ✅ JWT 토큰에 Firestore 기반 사용자 정보 저장
-     - subscriptions, admins 컬렉션에서 구독/권한 상태 불러오기
-    ------------------------------------------------------- */
-    async jwt({ token, user }) {
+     ------------------------------------------------------- */
+    async jwt({ token, user }: { token: any; user: any }) {
       if (user?.email) {
         try {
           const subRef = doc(db, "subscriptions", user.email);
@@ -48,7 +46,7 @@ export const authOptions = {
             token.expiresAt = null;
           }
 
-          // 관리자 여부 확인
+          // ✅ 관리자 여부 확인
           const adminRef = doc(db, "admins", user.email);
           const adminSnap = await getDoc(adminRef);
           token.isAdmin =
@@ -64,8 +62,14 @@ export const authOptions = {
 
     /* -------------------------------------------------------
      ✅ 세션에 이메일, 구독상태, 관리자여부 포함
-    ------------------------------------------------------- */
-    async session({ session, token }) {
+     ------------------------------------------------------- */
+    async session({
+      session,
+      token,
+    }: {
+      session: any;
+      token: any;
+    }) {
       if (session?.user && token?.email) {
         session.user.email = token.email;
         session.user.subscriptionStatus = token.subscriptionStatus || "none";
@@ -77,8 +81,8 @@ export const authOptions = {
 
     /* -------------------------------------------------------
      ✅ 로그인 후 항상 /dashboard로 리디렉트
-    ------------------------------------------------------- */
-    async redirect({ baseUrl }) {
+     ------------------------------------------------------- */
+    async redirect({ baseUrl }: { baseUrl: string }) {
       return `${baseUrl}/dashboard`;
     },
   },
