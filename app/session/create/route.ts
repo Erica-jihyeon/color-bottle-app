@@ -12,7 +12,7 @@ export async function POST(req: Request) {
 
     // 7일 유효기간
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(now.getTime() + 1 * 60 * 1000);
 
     // Firestore에 저장
     const sessionRef = await addDoc(collection(db, "sessions"), {

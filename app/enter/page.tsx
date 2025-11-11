@@ -6,6 +6,7 @@ import Dashboard from "@/components/Dashboard";
 import LoginSection from "@/components/LoginSection";
 import admin from "firebase-admin";
 import Footer from "@/components/Footer";
+import LogoutButton from "@/components/LogoutButton";
 
 /* -------------------------------------------------------
  ✅ Firebase Admin SDK 초기화 (서버 환경 전용)
@@ -68,25 +69,29 @@ export default async function EnterPage() {
   ------------------------------------------------------- */
   if (!isAdmin && !subscriptionStatus) {
     return (
-      <div style={{ padding: "2rem", textAlign: "center" }}>
-        <h1>접근 권한이 없습니다</h1>
-        <p>이 워크샵은 등록된 교사 또는 관리자만 접근 가능합니다.</p>
-        <p style={{ marginTop: "1rem", color: "#888" }}>
+      <div
+        style={{
+          padding: "3rem 1rem",
+          textAlign: "center",
+          maxWidth: "480px",
+          margin: "3rem auto",
+          background: "#fff",
+          borderRadius: "12px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+        }}
+      >
+        <h1 style={{ fontSize: "1.6rem", marginBottom: "0.8rem" }}>접근 권한이 없습니다</h1>
+        <p style={{ color: "#666", lineHeight: 1.5 }}>
+          이 워크샵은 등록된 컬러인포스 강사 또는 관리자만 접근 가능합니다.
+        </p>
+        <p style={{ marginTop: "1rem", color: "#999" }}>
           현재 로그인된 이메일: <strong>{email}</strong>
         </p>
-        <a
-          href="/api/auth/signout"
-          style={{
-            display: "inline-block",
-            marginTop: "1rem",
-            padding: "0.6rem 1.2rem",
-            border: "1px solid #999",
-            borderRadius: "8px",
-            fontSize: "0.9rem",
-          }}
-        >
-          로그아웃
-        </a>
+  
+        {/* ✅ 로그아웃 버튼 분리 (클라이언트 컴포넌트) */}
+        <LogoutButton />
+  
+        <Footer />
       </div>
     );
   }
@@ -95,12 +100,15 @@ export default async function EnterPage() {
    ✅ 권한 OK → Dashboard 렌더링
   ------------------------------------------------------- */
   return (
-    <Dashboard
-      user={session.user}
-      isAdmin={isAdmin}
-      subscriptionStatus={subscriptionStatus}
-      subscriptionName={subscriptionName}
-      expiresAt={expiresAt}
-    />
+    <>
+      <Dashboard
+        user={session.user}
+        isAdmin={isAdmin}
+        subscriptionStatus={subscriptionStatus}
+        subscriptionName={subscriptionName}
+        expiresAt={expiresAt}
+      />
+      <Footer />
+    </>
   );
 }

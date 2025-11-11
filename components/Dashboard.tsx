@@ -6,6 +6,7 @@ import { Copy } from "lucide-react";
 import { signOut } from "next-auth/react";
 import Footer from "@/components/Footer";
 
+
 export default function Dashboard({
   user,
   isAdmin,
