@@ -1,32 +1,41 @@
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
-import { db } from "@/lib/firebase";
-import { collection, addDoc, Timestamp } from "firebase/firestore";
+import { adminDb } from "@/lib/firebaseAdmin";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/route";
+import { v4 as uuidv4 } from "uuid";
 
 export async function POST() {
   try {
     const session = await getServerSession(authOptions);
     const email = session?.user?.email ?? "unknown";
 
-    const id = Math.random().toString(36).substring(2, 8) + Date.now().toString(36);
-    const now = Date.now();
-    const expiresAt = now + 1000 * 60 * 60 * 24; // 24시간
+    // ✅ 세션 ID 및 만료 시간 설정
+    const id = uuidv4();
+    const now = new Date();
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24); // 24시간
 
-    await addDoc(collection(db, "sessions"), {
+    // ✅ Firestore(Admin SDK)로 저장
+    await adminDb.collection("sessions").doc(id).set({
       id,
       createdBy: email,
-      createdAt: Timestamp.fromMillis(now),
-      expiresAt: Timestamp.fromMillis(expiresAt),
+      createdAt: now,
+      expiresAt,
     });
 
-    return NextResponse.json({ id, expiresAt });
+    console.log(`✅ 하루 세션 생성 완료: ${id} (${email})`);
+
+    return NextResponse.json({
+      ok: true,
+      url: `/session/${id}`,
+      expiresAt,
+    });
   } catch (error) {
-    console.error("세션 생성 실패:", error);
-    return NextResponse.json({ error: "세션 생성 실패" }, { status: 500 });
+    console.error("❌ 세션 생성 오류:", error);
+    return NextResponse.json(
+      { ok: false, error: "세션 생성 실패" },
+      { status: 500 }
+    );
   }
 }
-
-
-
-
